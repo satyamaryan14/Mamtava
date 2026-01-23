@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MamaHub | AI Patient App</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map { height: 250px; width: 100%; border-radius: 12px; margin-top: 10px; z-index: 1; }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="header-top">
+            <div class="logo">
+                <i class="ph-fill ph-baby"></i>
+                <span>MamaHub</span>
+            </div>
+            <select class="lang-select" onchange="changeLanguage(this.value)">
+                <option value="en">🇺🇸 English</option>
+                <option value="hi">🇮🇳 Hindi</option>
+            </select>
+        </div>
+        
+        <div class="greeting">
+            <h1>Good morning,<br><span class="highlight">Anjali</span> 🌸</h1>
+            <p id="msg">Today is a great day for growth!</p>
+        </div>
+    </header>
+
+    <main class="content">
+        
+        <div class="card progress-card">
+            <i class="ph-fill ph-plant card-bg-icon"></i>
+            <div class="progress-info">
+                <div>
+                    <span class="badge">Week 28</span>
+                    <h2>Third Trimester</h2>
+                </div>
+                <div class="right">
+                    <p class="value">🍆 Eggplant</p>
+                </div>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+       <div class="action-grid">
+            <div class="grid-btn"><i class="ph-fill ph-pill text-blue"></i><span>Meds</span></div>
+            <div class="grid-btn" onclick="fetchWellness()"><i class="ph-fill ph-carrot text-orange"></i><span>Diet & Fit</span></div>
+            <div class="grid-btn"><i class="ph-fill ph-heartbeat text-red"></i><span>Symptoms</span></div>
+        </div>
+
+        <div id="wellness-card" class="card" style="display:none; border-left: 5px solid #10b981; margin-top:15px;">
+            <div style="display:flex; justify-content:space-between;">
+                <h4 style="margin:0;">🥗 AI Nutrition Plan</h4>
+                <span class="badge" style="background:#d1fae5; color:#065f46;">3rd Trimester</span>
+            </div>
+            
+            <div style="margin-top:15px;">
+                <p><strong>🎯 Daily Target:</strong> <span id="cal-target">Loading...</span></p>
+                <div id="meal-list" style="margin-top:10px; font-size:13px; color:#555;"></div>
+            </div>
+
+            <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+
+            <h4 style="margin:0;">🧘‍♀️ Safe Exercises</h4>
+            <div id="exercise-list" style="margin-top:10px; display:flex; gap:10px; overflow-x:auto;"></div>
+        </div>
+        
+        <div id="ai-response" class="card" style="display:none; border-left: 5px solid #9333ea;">
+            <h4>🤖 AI Analysis:</h4>
+            <p id="ai-text" style="font-size: 14px; color: #555;"></p>
+        </div>
+
+        <div class="card" style="margin-top: 10px; border: 1px solid #fef08a;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h4 style="margin:0; font-size: 16px;">🏛️ Govt Resources</h4>
+                <button onclick="fetchGovtStores()" style="background: #eab308; border: none; padding: 6px 12px; border-radius: 8px; color: white; cursor: pointer; font-size: 12px; font-weight: 600;">
+                    Find Near Me
+                </button>
+            </div>
+            
+            <div class="card" style="margin-top: 10px; border: 1px solid #fef08a;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h4 style="margin:0; font-size: 16px;">🏛️ Jan Aushadhi Map</h4>
+                <button onclick="loadMap()" style="background: #eab308; border: none; padding: 6px 12px; border-radius: 8px; color: white; cursor: pointer; font-size: 12px; font-weight: 600;">
+                    Load Map
+                </button>
+            </div>
+            
+            <div id="map"></div>
+        </div>
+        </div>
+
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active"><i class="ph-fill ph-house"></i></a>
+        
+        <div class="voice-container">
+            <button class="voice-btn" onclick="startVoiceListening()">
+                <i class="ph-fill ph-microphone"></i>
+            </button>
+        </div>
+
+        <a href="#" class="nav-item"><i class="ph ph-user"></i></a>
+    </nav>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
