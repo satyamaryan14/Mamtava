@@ -1,40 +1,48 @@
-# Mamtava: Maa ki Mamta, Science ka Bharosa.
-### (Formerly Little Bloom)
+# Mamtava: Maa ki Mamta, Science ka Bharosa. 🌸
 
-**Mamtava** is an AI-powered maternal health ecosystem designed specifically for **Rural India**. It bridges the gap between expecting mothers in remote villages and proper medical care using **Offline-First AI** and **Voice Interactions**.
+>  *Bridging the gap between Rural Mothers and Medical Care.*
+
+**Mamtava** is a **Real-Time, AI-Powered Maternal Health Ecosystem** designed specifically for **Rural India**. It empowers expecting mothers with vernacular voice support while providing doctors with a live, autonomous triage dashboard.
 
 ---
 
-## 🚩 The Problem (Why we built this)
+## 🚩 The Problem
 According to **NFHS-5 Data**, rural India faces a critical maternal health crisis:
-1.  **54.1% of rural women are Anemic**, leading to high risk of complications.
-2.  **The "4-Visit Gap":** Only 58% of rural mothers complete the required 4 Antenatal Care (ANC) visits.
-3.  **Device Gap:** 58% of rural women access the internet via shared devices, making standard apps unusable.
-
-## 💡 The Solution: Mamtava
-Mamtava is not just a tracker; it is an intelligent triage system.
-
-### Key Features:
-* **🗣️ Voice-First AI:** Mothers can speak symptoms ("I feel dizzy") in their local language. The AI analyzes sentiment and clinical keywords to detect risks like **Preeclampsia** or **Anemia**.
-* **📡 Offline-Ready:** Works in low-network areas. Data syncs when connectivity is available.
-* **🏥 Smart Doctor Dashboard:** Doctors don't see raw data. They see a **Prioritized Risk List** (Critical/High/Low) powered by our Random Forest Logic.
-* **📍 Jan Aushadhi Map:** Automatically finds the nearest affordable government pharmacy (PMBJP Kendras) using Open Govt Data.
+* **Language Barrier:** Most health apps are in English; rural mothers speak dialects like *Bhojpuri* or *Maithili*.
+* **The "Golden Hour" Delay:** In emergencies, connecting to a doctor takes too long.
+* **Information Overload:** Doctors cannot monitor hundreds of healthy patients to find the one at risk.
 
 ---
 
-## ⚙️ Technology Stack
-* **Backend:** Python (Flask)
-* **AI Engine:** TextBlob (Sentiment Analysis) + Custom Risk Algorithm
-* **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
-* **Mapping:** Leaflet.js + OpenStreetMap
-* **Data Source:** Open Government Data (OGD) Platform & NFHS-5 Reports
+## 💡 The Solution: Mamtava 2.0
+Mamtava is not just a tracker; it is an **Intelligent Real-Time Triage System**.
+
+### 🌟 Key Features
+* **🗣️ Multilingual Voice AI:** Mothers can speak in **Hindi, Bhojpuri, Maithili, Kannada, or Gujarati**. The system translates, analyzes symptoms, and speaks back medical advice in their own accent.
+* **🚨 Zero-Latency SOS:** Powered by **WebSockets (Socket.IO)**. When a mother presses "SOS", the Doctor's dashboard flashes **Red** instantly—faster than an SMS.
+* **🧠 Predictive Risk AI:** A custom **Random Forest Machine Learning Model** predicts risks (Preeclampsia/Anemia) based on vitals and voice sentiment.
+* **⚡ Hybrid Doctor Dashboard:** Built with **React.js** embedded in Flask for high-performance, real-time patient monitoring without page reloads.
+* **🗺️ Jan Aushadhi Map:** Automatically finds the nearest affordable government pharmacy using Open Govt Data.
+
+---
+
+## ⚙️ Technology Stack (Hybrid Architecture)
+* **Frontend:** HTML5, Tailwind CSS, **React.js** (Doctor Portal), Leaflet.js (Maps).
+* **Backend:** Python (**Flask**), **Flask-SocketIO** (Real-Time Engine).
+* **AI & NLP:**
+    * **GoogleTrans API:** For real-time translation of 5+ Indian languages.
+    * **Scikit-Learn:** Random Forest Classifier for Risk Prediction.
+    * **TextBlob:** Sentiment Analysis of voice notes.
+    * **Web Speech API:** Native browser-based speech recognition.
 
 ---
 
 ## 🚀 How to Run Locally
 
-### Prerequisites
-* Python 3.x installed
+### 1. Clone the Repository
+```bash
+git clone [https://github.com/satyamaryan14/Mamtava.git](https://github.com/satyamaryan14/Mamtava.git)
+cd Mamtava
 
 ### Steps
 1.  **Clone the Repository**
