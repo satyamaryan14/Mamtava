@@ -41,7 +41,7 @@ Mamtava is not just a tracker; it is an **Intelligent Real-Time Triage System**.
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/satyamaryan14/Mamtava.git](https://github.com/satyamaryan14/Mamtava.git)
+git clone https://github.com/satyamaryan14/Mamtava.git
 cd Mamtava
 
 ### Steps
@@ -53,7 +53,7 @@ cd Mamtava
 
 2.  **Install Dependencies**
     ```bash
-    pip install -r requirements.txt
+    pip install flask flask-socketio simple-websocket textblob pandas numpy scikit-learn googletrans==4.0.0-rc1
     ```
 
 3.  **Run the Application**
