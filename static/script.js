@@ -1,184 +1,155 @@
-// 1. Language Logic
-function changeLanguage(lang) {
-    alert("Language switched to: " + lang + " (Demo Mode)");
-}
+// --- 1. CONFIGURATION & SETUP ---
+    const socket = io();
+    let map;
+    let currentLang = 'en';
 
-// 2. Voice Logic
-function startVoiceListening() {
-    const btn = document.querySelector('.voice-btn');
-    
-    // Check if browser supports speech
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        alert("Voice not supported. Try Chrome browser.");
-        return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US'; // Default to English
-    
-    // UI Feedback
-    btn.classList.add('listening');
-    recognition.start();
-
-    recognition.onresult = async (event) => {
-        const text = event.results[0][0].transcript;
-        btn.classList.remove('listening');
-        
-        // Show what user said
-        console.log("User said:", text);
-        
-        // SEND TO PYTHON BACKEND
-        await sendToPythonAI(text);
+    // Language Mapping for Voice (Chrome/Web Speech API)
+    // Maithili (mai), Bhojpuri (bho), Angika (hi) -> Mapped to Hindi (hi-IN)
+    const voiceCodes = {
+        'en': 'en-US',
+        'hi': 'hi-IN',
+        'mai': 'hi-IN', 
+        'bho': 'hi-IN',
+        'kn': 'kn-IN',  // Kannada
+        'gu': 'gu-IN'   // Gujarati
     };
 
-    recognition.onerror = () => {
-        btn.classList.remove('listening');
-        alert("Couldn't hear you. Try again.");
-    };
-}
-
-// 3. Connect to Python Backend
-async function sendToPythonAI(voiceText) {
-    const responseBox = document.getElementById('ai-response');
-    const responseText = document.getElementById('ai-text');
-    
-    responseBox.style.display = 'block';
-    responseText.innerText = "Thinking...";
-
-    try {
-        const response = await fetch('/api/analyze_voice', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: voiceText })
-        });
+    // --- 2. SMART LANGUAGE SWITCHER (Calls Python API) ---
+    async function changeLang() {
+        // Get selected language
+        currentLang = document.getElementById('lang').value;
         
-        const data = await response.json();
+        // Visual Feedback
+        document.getElementById('voice-title').innerText = "Translating...";
+        document.getElementById('voice-sub').innerText = "Please wait...";
+
+        try {
+            // Call Python to translate the UI text
+            const res = await fetch('/api/translate_ui', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lang: currentLang })
+            });
+            
+            const txt = await res.json();
+            
+            // Update the Screen with Translated Text
+            document.getElementById('greet').innerText = txt.greet;
+            document.getElementById('sos-txt').innerText = txt.sos;
+            document.getElementById('voice-title').innerText = txt.voice_title;
+            document.getElementById('voice-sub').innerText = txt.voice_sub;
+            document.getElementById('diet-title').innerText = txt.diet;
+            document.getElementById('map-title').innerText = txt.map;
+
+        } catch (err) {
+            console.error("Translation Error:", err);
+            document.getElementById('voice-title').innerText = "Translation Failed";
+        }
+    }
+
+    // --- 3. VOICE AI (Sends Language + Text) ---
+    function startListening() {
+        const btn = document.getElementById('mic-btn');
+        const resultBox = document.getElementById('ai-result');
         
-        // Display AI Result
-        responseText.innerHTML = `
-            <strong>Symptoms:</strong> ${data.detected_symptoms.join(", ") || "None"}<br>
-            <strong>Mood:</strong> ${data.mood}
-        `;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) { alert("Voice features require Chrome or Edge."); return; }
+
+        const recognition = new SpeechRecognition();
         
-    } catch (error) {
-        console.error(error);
-        responseText.innerText = "Error connecting to AI Server.";
+        // IMPORTANT: Set the microphone to the correct regional accent
+        recognition.lang = voiceCodes[currentLang] || 'en-US';
+        
+        btn.classList.add('voice-wave');
+        recognition.start();
+
+        recognition.onresult = async (event) => {
+            btn.classList.remove('voice-wave');
+            const text = event.results[0][0].transcript;
+            
+            // Show "Thinking" UI
+            resultBox.classList.remove('hidden');
+            document.getElementById('ai-risk').innerText = `"${text}"`;
+            document.getElementById('ai-advice').innerText = "Consulting AI Doctor...";
+
+            try {
+                // SEND TEXT AND LANGUAGE TO PYTHON
+                const response = await fetch('/api/analyze_voice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        text: text, 
+                        lang: currentLang // <--- Sending language code (e.g., 'bho')
+                    })
+                });
+                const data = await response.json();
+
+                // Display Translated Results
+                const riskColor = data.risk === "Critical" ? "text-red-600" : (data.risk === "High" ? "text-orange-600" : "text-green-600");
+                document.getElementById('ai-risk').className = `font-bold text-lg mt-1 ${riskColor}`;
+                
+                // Show translated Risk & Advice
+                document.getElementById('ai-risk').innerText = data.risk_display; 
+                document.getElementById('ai-advice').innerText = data.action;
+                
+                // Speak out the advice in the regional language!
+                if(data.risk !== "Low") {
+                    const utterance = new SpeechSynthesisUtterance(data.action);
+                    utterance.lang = voiceCodes[currentLang]; // Speak in Bhojpuri/Kannada etc.
+                    window.speechSynthesis.speak(utterance);
+                }
+            } catch (err) {
+                document.getElementById('ai-advice').innerText = "Error connecting to AI.";
+            }
+        };
+
+        recognition.onerror = () => {
+            btn.classList.remove('voice-wave');
+            alert("Could not hear you. Please try again.");
+        };
     }
-}
-// --- 4. GOVT OPEN DATA LOGIC ---
-async function fetchGovtStores() {
-    const list = document.getElementById('store-list');
-    list.innerHTML = '<p style="font-size:12px;">Fetching from Open Govt Data...</p>';
 
-    try {
-        // Call the Python API we just made
-        const response = await fetch('/api/govt_stores');
-        const stores = await response.json();
-
-        // Clear the list
-        list.innerHTML = '';
-
-        // Add each store to the UI
-        stores.forEach(store => {
-            const item = document.createElement('div');
-            item.style = "background: #fdfce7; padding: 10px; border-radius: 8px; border: 1px solid #fef08a;";
-            item.innerHTML = `
-                <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:13px;">
-                    <span>${store.name}</span>
-                    <span style="color:#854d0e;">${store.distance}</span>
-                </div>
-                <div style="font-size:11px; color:#666; margin-top:4px; display:flex; gap:10px;">
-                    <span>${store.type}</span>
-                    <span style="color:green; font-weight:600;">• ${store.stock}</span>
-                </div>
-            `;
-            list.appendChild(item);
-        });
-
-    } catch (error) {
-        console.error(error);
-        list.innerHTML = '<p style="color:red;">Error fetching data.</p>';
+    // --- 4. SOS LOGIC (Real-Time) ---
+    function triggerSOS() {
+        if(confirm("🚨 Are you sure? This will alert the Ambulance.")) {
+            socket.emit('trigger_sos', { lat: "28.6139", lng: "77.2090" });
+            alert("🚑 SOS SENT! Doctor has been alerted.");
+        }
     }
-}
-// --- 5. MAP LOGIC (Leaflet.js) ---
-let mapInitialized = false;
 
-function loadMap() {
-    if (mapInitialized) return; // Don't reload if already open
+    // --- 5. WELLNESS PLAN ---
+    async function loadWellness() {
+        const box = document.getElementById('wellness-content');
+        box.innerHTML = '<p class="text-xs text-green-600 animate-pulse">Fetching Personal Plan...</p>';
+        try {
+            const res = await fetch('/api/get_wellness_plan');
+            const data = await res.json();
+            box.innerHTML = data.meals.map(m => `
+                <div class="flex justify-between text-sm border-b border-gray-50 pb-2">
+                    <span class="font-bold text-gray-700">${m.time}</span>
+                    <span class="text-gray-500">${m.food}</span>
+                </div>
+            `).join('');
+        } catch (err) {
+            box.innerHTML = '<p class="text-xs text-red-500">Failed to load plan.</p>';
+        }
+    }
+
+    // --- 6. MAP LOGIC ---
+    function initMap() {
+        map = L.map('map').setView([28.6139, 77.2090], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        fetch('/api/govt_stores')
+            .then(r => r.json())
+            .then(stores => {
+                stores.forEach(s => {
+                    const lat = 28.6139 + (Math.random() - 0.5) * 0.03;
+                    const lng = 77.2090 + (Math.random() - 0.5) * 0.03;
+                    L.marker([lat, lng]).addTo(map).bindPopup(`<b>${s.name}</b><br>${s.stock}`);
+                });
+            })
+            .catch(e => console.log("Map Error:", e));
+    }
     
-    // 1. Initialize the map (Centered on a sample location in India)
-    // In a real app, we would use navigator.geolocation to get real user location
-    const map = L.map('map').setView([28.6139, 77.2090], 13); // New Delhi Coordinates
-
-    // 2. Add the "Skin" (OpenStreetMap - Free)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    // 3. Add Pins (Markers) for Govt Stores
-    const stores = [
-        { lat: 28.6139, lng: 77.2090, title: "PM Jan Aushadhi Kendra (Sec 4)" },
-        { lat: 28.6200, lng: 77.2100, title: "Civil Hospital Blood Bank" },
-        { lat: 28.6100, lng: 77.2000, title: "Anganwadi Center 12" }
-    ];
-
-    stores.forEach(store => {
-        L.marker([store.lat, store.lng])
-            .addTo(map)
-            .bindPopup(`<b>${store.title}</b><br>Stock: Available`);
-    });
-
-    mapInitialized = true;
-    alert("Map Loaded! Look for the Blue Pins 📍");
-}
-// --- 6. WELLNESS LOGIC ---
-async function fetchWellness() {
-    const card = document.getElementById('wellness-card');
-    
-    // Toggle visibility (Show/Hide)
-    if (card.style.display === 'block') {
-        card.style.display = 'none';
-        return;
-    }
-    card.style.display = 'block';
-
-    // Show loading state
-    document.getElementById('cal-target').innerText = "Calculating personal needs...";
-
-    try {
-        const response = await fetch('/api/get_wellness_plan');
-        const data = await response.json();
-
-        // 1. Update Calories
-        document.getElementById('cal-target').innerText = data.calories;
-
-        // 2. Build Meal List
-        const mealBox = document.getElementById('meal-list');
-        mealBox.innerHTML = ''; // Clear old
-        data.meals.forEach(m => {
-            mealBox.innerHTML += `
-                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                    <span><b>${m.time}:</b> ${m.food}</span>
-                    <span style="color:#10b981;">${m.cal} cal</span>
-                </div>
-            `;
-        });
-
-        // 3. Build Exercise Chips
-        const exBox = document.getElementById('exercise-list');
-        exBox.innerHTML = ''; // Clear old
-        data.exercises.forEach(ex => {
-            exBox.innerHTML += `
-                <div style="min-width:100px; background:#f0fdf4; padding:8px; border-radius:8px; border:1px solid #bbf7d0; text-align:center;">
-                    <div style="font-weight:bold; font-size:12px; color:#166534;">${ex.name}</div>
-                    <div style="font-size:10px; color:#15803d;">${ex.duration}</div>
-                </div>
-            `;
-        });
-
-    } catch (error) {
-        console.error("Error fetching wellness plan", error);
-        document.getElementById('cal-target').innerText = "Error loading plan.";
-    }
-}
+    // Start Map
+    initMap();

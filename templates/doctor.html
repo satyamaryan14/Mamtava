@@ -3,175 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MamaHub | AI Command Center</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>Mamtava | Doctor Command Center</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { display: flex; height: 100vh; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
-        .sidebar { width: 240px; background: #0f172a; color: white; display: flex; flex-direction: column; padding: 20px; }
-        .main-dashboard { flex: 1; padding: 25px; overflow-y: auto; background: #f1f5f9; }
-        
-        /* High Tech Cards */
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .stat-card h3 { margin: 5px 0 0; font-size: 24px; color: #1e293b; }
-        .stat-card small { color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        /* Table Styles */
-        .table-container { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: left; padding: 12px; color: #64748b; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 15px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #334155; }
-        
-        /* AI Badges */
-        .badge { padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 11px; display: inline-block; }
-        .badge-crit { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
-        .badge-high { background: #ffedd5; color: #ea580c; border: 1px solid #fed7aa; }
-        .badge-low { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        
-        .action-btn { background: #0f172a; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; }
-        .mood-tag { font-size: 10px; background: #f1f5f9; padding: 2px 6px; border-radius: 99px; color: #64748b; margin-top: 4px; display: inline-block; }
-    </style>
 </head>
-<body>
+<body class="doctor-body">
 
-    <aside class="sidebar">
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom: 40px;">
-            <i class="ph-fill ph-brain" style="color:#60a5fa; font-size: 28px;"></i>
-            <div>
-                <div style="font-weight: 700; font-size: 18px;">MamaHub AI</div>
-                <div style="font-size: 10px; color: #94a3b8;">AUTONOMOUS TRIAGE</div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // ... (Paste the same React code from the previous turn here) ...
+        // I will re-paste the condensed React logic below to make it easy for you.
+
+        const { useState, useEffect } = React;
+        const socket = io();
+
+        const StatCard = ({ title, count, color, icon }) => (
+            <div className={`bg-white p-6 rounded-xl shadow-sm border-l-4 ${color}`}>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{title}</p>
+                        <h3 className="text-3xl font-bold text-gray-800 mt-1">{count}</h3>
+                    </div>
+                    <i className={`ph-fill ${icon} text-2xl text-gray-300`}></i>
+                </div>
             </div>
-        </div>
-        <div style="color: #94a3b8; font-size: 11px; margin-bottom: 10px;">MAIN MENU</div>
-        <nav style="display:flex; flex-direction:column; gap:15px;">
-            <div style="color:white; font-weight:600;">⚡ Live Triage</div>
-            <div style="color:#94a3b8;">📊 Population Health</div>
-            <div style="color:#94a3b8;">🏥 Resource Map</div>
-        </nav>
-    </aside>
+        );
 
-    <main class="main-dashboard">
-        <div class="stats-grid">
-            <div class="stat-card" style="border-color: #ef4444;">
-                <small>Critical Alerts</small>
-                <h3 id="count-crit">0</h3>
-            </div>
-            <div class="stat-card" style="border-color: #f59e0b;">
-                <small>Review Needed</small>
-                <h3 id="count-rev">0</h3>
-            </div>
-            <div class="stat-card" style="border-color: #22c55e;">
-                <small>System Status</small>
-                <h3 style="font-size: 16px; margin-top: 8px;">🟢 AI ONLINE</h3>
-            </div>
-             <div class="stat-card" style="border-color: #6366f1;">
-                <small>Avg Response Time</small>
-                <h3>1.2s</h3>
-            </div>
-        </div>
+        function Dashboard() {
+            const [patients, setPatients] = useState([]);
+            const [stats, setStats] = useState({ crit: 0, high: 0, safe: 0 });
 
-        <div class="table-container" style="margin-bottom: 20px; height: 200px;">
-            <canvas id="riskChart"></canvas>
-        </div>
-
-        <div class="table-container">
-            <h3 style="margin:0; font-size: 16px;">🚨 Live Incoming Patient Stream</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th width="20%">PATIENT PROFILE</th>
-                        <th width="20%">AI VITALS SCAN</th>
-                        <th width="25%">SYMPTOMS DETECTED</th>
-                        <th width="15%">AI CALCULATED RISK</th>
-                        <th width="20%">AUTONOMOUS ACTION</th>
-                    </tr>
-                </thead>
-                <tbody id="patient-table-body">
-                    </tbody>
-            </table>
-        </div>
-    </main>
-
-    <script>
-        // 1. Chart Setup
-        let riskChart;
-        function initChart() {
-            const ctx = document.getElementById('riskChart').getContext('2d');
-            riskChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Safe', 'Watch', 'Critical'],
-                    datasets: [{
-                        data: [1, 0, 0],
-                        backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'],
-                        borderWidth: 0,
-                        cutout: '85%'
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'right' } }
-                }
-            });
-        }
-        initChart();
-
-        // 2. The Logic
-        async function fetchUpdates() {
-            try {
-                const response = await fetch('/api/doctor/updates');
-                const patients = await response.json();
-                
-                const tbody = document.getElementById('patient-table-body');
-                tbody.innerHTML = ''; 
-
-                let crit=0, watch=0, safe=0;
-
-                patients.reverse().forEach(p => {
-                    // Logic for Badge Style
-                    let badgeClass = "badge-low";
-                    if(p.risk === "Critical") { badgeClass = "badge-crit"; crit++; }
-                    else if(p.risk === "High") { badgeClass = "badge-high"; watch++; }
-                    else { safe++; }
-
-                    const row = `
-                        <tr style="animation: fadeIn 0.5s;">
-                            <td>
-                                <b>${p.name}</b><br>
-                                <span class="mood-tag">${p.mood}</span>
-                            </td>
-                            <td>
-                                <div style="font-family: monospace; font-weight:600; color:#334155;">${p.vitals}</div>
-                            </td>
-                            <td>${p.symptoms}</td>
-                            <td>
-                                <span class="badge ${badgeClass}">${p.risk.toUpperCase()} (${p.risk_score}%)</span>
-                            </td>
-                            <td>
-                                <div style="font-weight:700; font-size:11px; color:#0f172a; margin-bottom:4px;">${p.action}</div>
-                                <button class="action-btn">APPROVE</button>
-                            </td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
+            useEffect(() => {
+                fetch('/api/doctor/updates').then(res => res.json()).then(data => setPatients(data.reverse()));
+                socket.on('doctor_alert', (newReport) => {
+                    if (newReport.risk !== "Low") {
+                        new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(e=>{});
+                    }
+                    setPatients(prev => [newReport, ...prev]);
                 });
+                return () => socket.off('doctor_alert');
+            }, []);
 
-                // Update Stats Headers
-                document.getElementById('count-crit').innerText = crit;
-                document.getElementById('count-rev').innerText = watch;
+            useEffect(() => {
+                const crit = patients.filter(p => p.risk === "Critical").length;
+                const high = patients.filter(p => p.risk === "High").length;
+                const safe = patients.filter(p => p.risk === "Low").length;
+                setStats({ crit, high, safe });
+            }, [patients]);
 
-                // Update Chart
-                riskChart.data.datasets[0].data = [safe, watch, crit];
-                riskChart.update();
+            return (
+                <div className="flex h-screen overflow-hidden">
+                    <aside className="w-64 bg-slate-900 text-white flex flex-col p-6 hidden md:flex">
+                        <div className="flex items-center gap-3 mb-10">
+                            <i className="ph-fill ph-baby text-3xl text-purple-400"></i>
+                            <div><h1 className="font-bold text-xl">Mamtava</h1><p className="text-xs text-slate-400">DOCTOR PORTAL</p></div>
+                        </div>
+                        <nav className="flex flex-col gap-4 text-sm font-medium">
+                            <div className="p-3 bg-slate-800 rounded-lg text-purple-300 flex items-center gap-3"><i className="ph-fill ph-broadcast"></i> Live Triage</div>
+                        </nav>
+                    </aside>
 
-            } catch (error) { console.error("Sync Error"); }
+                    <main className="flex-1 overflow-y-auto p-8">
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-2xl font-bold text-slate-800">Dashboard Overview</h2>
+                            <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm text-sm font-medium text-slate-600">
+                                <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span> Live WebSocket Active
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                            <StatCard title="Critical" count={stats.crit} color="border-red-500 text-red-600" icon="ph-warning" />
+                            <StatCard title="High Risk" count={stats.high} color="border-orange-500 text-orange-600" icon="ph-chart-line-up" />
+                            <StatCard title="Safe" count={stats.safe} color="border-green-500 text-green-600" icon="ph-check-circle" />
+                            <div className="bg-slate-800 p-6 rounded-xl shadow-sm text-white"><p className="text-xs font-bold text-slate-400 uppercase">Avg Response</p><h3 className="text-3xl font-bold mt-1">1.2s</h3></div>
+                        </div>
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="p-6 border-b border-slate-100"><h3 className="font-bold text-slate-700">🚨 Live Stream</h3></div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead><tr className="bg-slate-50 text-slate-500 text-xs uppercase"><th className="p-4">Patient</th><th className="p-4">Vitals</th><th className="p-4">Symptoms</th><th className="p-4">Risk</th><th className="p-4">Action</th></tr></thead>
+                                    <tbody className="text-sm divide-y divide-slate-100">
+                                        {patients.map((p, idx) => {
+                                            let riskStyle = "bg-green-100 text-green-700 border-green-200";
+                                            let rowClass = "";
+                                            if (p.risk === "Critical") { riskStyle = "bg-red-100 text-red-700 border-red-200"; rowClass = "animate-flash"; } 
+                                            else if (p.risk === "High") { riskStyle = "bg-orange-100 text-orange-700 border-orange-200"; }
+                                            return (
+                                                <tr key={idx} className={`hover:bg-slate-50 transition-colors ${rowClass}`}>
+                                                    <td className="p-4"><div className="font-bold text-slate-800">{p.name}</div><div className="text-xs text-slate-500">{p.mood}</div></td>
+                                                    <td className="p-4 font-mono text-slate-600 font-medium">{p.vitals}</td>
+                                                    <td className="p-4 text-slate-600">{p.symptoms}</td>
+                                                    <td className="p-4"><span className={`px-2 py-1 rounded-md text-xs font-bold border ${riskStyle}`}>{p.risk.toUpperCase()} ({p.risk_score}%)</span></td>
+                                                    <td className="p-4"><div className="font-bold text-slate-800 text-xs mb-1">{p.action}</div></td>
+                                                </tr>
+                                            );
+                                        })}
+                                        {patients.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-slate-400">Waiting for data...</td></tr>}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
         }
-
-        setInterval(fetchUpdates, 2000);
-        fetchUpdates();
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Dashboard />);
     </script>
 </body>
 </html>
