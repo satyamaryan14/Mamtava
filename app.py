@@ -158,3 +158,20 @@ def analyze_voice():
 if __name__ == '__main__':
     # USE SOCKETIO.RUN INSTEAD OF APP.RUN
     socketio.run(app, debug=True, port=5000)
+
+#routes to render pages
+@app.route('/')
+def login():
+    return render_template('login.html')
+
+@app.route('/otp')
+def otp():
+    return render_template('otp.html')
+
+#otp api's
+@app.route('/send-otp', methods=['POST'])
+@app.route('/verify-otp', methods=['POST'])
+
+#Fast2SMS function
+def send_sms(mobile, otp):
+    ...
