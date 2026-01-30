@@ -243,3 +243,55 @@ body {
 .badge-crit { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
 .badge-high { background: #ffedd5; color: #c2410c; border-color: #fed7aa; }
 .badge-low  { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+
+/* =========================
+   LOGIN & OTP PAGES (Mamatva)
+   ========================= */
+
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #fde2e4, #f8bbd0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: #ffffff;
+  padding: 30px;
+  width: 320px;
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(236, 64, 122, 0.2);
+  text-align: center;
+}
+
+.login-logo {
+  font-size: 26px;
+  font-weight: 600;
+  color: #ec407a;
+  margin-bottom: 8px;
+}
+
+.login-subtitle {
+  font-size: 14px;
+  color: #777;
+  margin-bottom: 20px;
+}
+
+.login-input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background: #ec407a;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
