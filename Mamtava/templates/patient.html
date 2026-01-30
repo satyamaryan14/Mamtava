@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mamtava | Mother's Companion</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="patient-body">
+
+    <header class="bg-white p-6 rounded-b-3xl shadow-sm sticky top-0 z-50">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2 text-pink-600 font-bold text-xl">
+                <i class="ph-fill ph-flower-lotus text-2xl"></i> Mamtava
+            </div>
+            <select id="lang" class="bg-pink-50 text-pink-700 text-xs font-bold py-2 px-3 rounded-full border-none outline-none" onchange="changeLang()">
+                <option value="en">English</option>
+                <option value="hi">हिंदी (Hindi)</option>
+                <option value="mai">मैथिली (Maithili)</option>
+                <option value="bho">भोजपुरी (Bhojpuri)</option>
+                <option value="hi">अंगिका (Angika)</option> <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                <option value="gu">ગુજરાતી (Gujarati)</option>
+            </select>
+        </div>
+        <div class="mt-4">
+            <h1 class="text-2xl font-bold text-gray-800"><span id="greet">Namaste</span>, Anjali 🌸</h1>
+            <p class="text-sm text-gray-500" id="week-txt">Week 28 • Third Trimester</p>
+        </div>
+    </header>
+
+    <main class="p-6 flex flex-col gap-6">
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-purple-100 flex items-center justify-between relative overflow-hidden">
+            <div class="absolute -right-6 -top-6 w-24 h-24 bg-purple-50 rounded-full z-0"></div>
+            <div class="z-10">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded-md">Week 28</span>
+                    <span class="text-xs text-gray-400 font-medium">3rd Trimester</span>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800">Size of an <span class="text-purple-600">Eggplant</span> 🍆</h2>
+                <div class="mt-3 w-32 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-purple-500 w-[70%] rounded-full"></div>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-1">70% of journey complete</p>
+            </div>
+            <div class="z-10 bg-white p-3 rounded-full shadow-sm border border-purple-50">
+                <i class="ph-fill ph-plant text-4xl text-purple-500"></i>
+            </div>
+        </div>
+
+        <button onclick="triggerSOS()" class="w-full bg-red-500 text-white p-4 rounded-xl shadow-lg font-bold flex items-center justify-center gap-2 animate-pulse active:scale-95 transition">
+            <i class="ph-fill ph-siren text-2xl"></i> <span id="sos-txt">EMERGENCY SOS</span>
+        </button>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-pink-100 text-center relative overflow-hidden">
+            <h3 class="font-bold text-gray-700 mb-2" id="voice-title">How are you feeling?</h3>
+            <p class="text-xs text-gray-400 mb-6" id="voice-sub">Tap the mic and say "I have a headache"</p>
+            
+            <button id="mic-btn" onclick="startListening()" class="voice-btn bg-pink-500 text-white text-3xl flex items-center justify-center mx-auto">
+                <i class="ph-fill ph-microphone"></i>
+            </button>
+
+            <div id="ai-result" class="hidden mt-6 text-left bg-pink-50 p-4 rounded-xl border border-pink-200">
+                <p class="text-xs font-bold text-pink-400 uppercase">AI Diagnosis</p>
+                <h4 id="ai-risk" class="font-bold text-lg text-gray-800 mt-1">Analyzing...</h4>
+                <p id="ai-advice" class="text-sm text-gray-600 mt-1">Please wait...</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-green-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-gray-700" id="diet-title">Your Nutrition</h3>
+                <button onclick="loadWellness()" class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold hover:bg-green-200">Refresh</button>
+            </div>
+            <div id="wellness-content" class="space-y-3">
+                <p class="text-sm text-gray-400 italic">Tap refresh to load your plan...</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-blue-100">
+             <div class="flex items-center gap-2 mb-4 ml-2">
+                 <i class="ph-fill ph-map-pin text-blue-500"></i>
+                 <h3 class="font-bold text-gray-700" id="map-title">Nearest Jan Aushadhi</h3>
+             </div>
+             <div id="map" class="h-48 rounded-xl bg-gray-100 z-0 border border-gray-200"></div>
+        </div>
+
+    </main>
+
+    <script>
+        const socket = io();
+        let map;
+
+        const txt = {
+            en: { greet: "Namaste", sos: "EMERGENCY SOS", voice: "How are you feeling?", diet: "Your Nutrition", map: "Nearest Jan Aushadhi" },
+            hi: { greet: "नमस्ते", sos: "आपातकालीन मदद (SOS)", voice: "आप कैसा महसूस कर रही हैं?", diet: "आपका आहार", map: "जन औषधि केंद्र" }
+        };
+
+        function changeLang() {
+            const lang = document.getElementById('lang').value;
+            document.getElementById('greet').innerText = txt[lang].greet;
+            document.getElementById('sos-txt').innerText = txt[lang].sos;
+            document.getElementById('voice-title').innerText = txt[lang].voice;
+            document.getElementById('diet-title').innerText = txt[lang].diet;
+            document.getElementById('map-title').innerText = txt[lang].map;
+        }
+
+        function triggerSOS() {
+            if(confirm("🚨 Are you sure? This will alert the Ambulance.")) {
+                socket.emit('trigger_sos', { lat: "28.6139", lng: "77.2090" });
+                alert("🚑 SOS SENT! Doctor has been alerted.");
+            }
+        }
+
+        function startListening() {
+            const btn = document.getElementById('mic-btn');
+            const resultBox = document.getElementById('ai-result');
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) { alert("Use Chrome for Voice Features"); return; }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = document.getElementById('lang').value === 'hi' ? 'hi-IN' : 'en-US';
+            
+            btn.classList.add('voice-wave');
+            recognition.start();
+
+            recognition.onresult = async (event) => {
+                btn.classList.remove('voice-wave');
+                const text = event.results[0][0].transcript;
+                
+                resultBox.classList.remove('hidden');
+                document.getElementById('ai-risk').innerText = `"${text}"`;
+                document.getElementById('ai-advice').innerText = "Consulting AI Doctor...";
+
+                try {
+                    const response = await fetch('/api/analyze_voice', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: text })
+                    });
+                    const data = await response.json();
+                    const riskColor = data.risk === "Critical" ? "text-red-600" : (data.risk === "High" ? "text-orange-600" : "text-green-600");
+                    document.getElementById('ai-risk').className = `font-bold text-lg mt-1 ${riskColor}`;
+                    document.getElementById('ai-risk').innerText = `${data.risk.toUpperCase()} RISK`;
+                    document.getElementById('ai-advice').innerText = data.action;
+                    
+                    if(data.risk !== "Low") {
+                        const utterance = new SpeechSynthesisUtterance(data.action);
+                        window.speechSynthesis.speak(utterance);
+                    }
+                } catch (err) {
+                    document.getElementById('ai-advice').innerText = "Error connecting to AI.";
+                }
+            };
+
+            recognition.onerror = () => {
+                btn.classList.remove('voice-wave');
+                alert("Could not hear you. Please try again.");
+            };
+        }
+
+        async function loadWellness() {
+            const box = document.getElementById('wellness-content');
+            box.innerHTML = '<p class="text-xs text-green-600 animate-pulse">Fetching Personal Plan...</p>';
+            try {
+                const res = await fetch('/api/get_wellness_plan');
+                const data = await res.json();
+                box.innerHTML = data.meals.map(m => `
+                    <div class="flex justify-between text-sm border-b border-gray-50 pb-2">
+                        <span class="font-bold text-gray-700">${m.time}</span>
+                        <span class="text-gray-500">${m.food}</span>
+                    </div>
+                `).join('');
+            } catch (err) {
+                box.innerHTML = '<p class="text-xs text-red-500">Failed to load plan.</p>';
+            }
+        }
+
+        function initMap() {
+            map = L.map('map').setView([28.6139, 77.2090], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            fetch('/api/govt_stores')
+                .then(r => r.json())
+                .then(stores => {
+                    stores.forEach(s => {
+                        const lat = 28.6139 + (Math.random() - 0.5) * 0.03;
+                        const lng = 77.2090 + (Math.random() - 0.5) * 0.03;
+                        L.marker([lat, lng]).addTo(map).bindPopup(`<b>${s.name}</b><br>${s.stock}`);
+                    });
+                })
+                .catch(e => console.log("Map Error:", e));
+        }
+        
+        initMap();
+    </script>
+</body>
+</html>
