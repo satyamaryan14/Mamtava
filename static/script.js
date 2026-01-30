@@ -153,3 +153,38 @@
     
     // Start Map
     initMap();
+
+//connecting frontend to flask
+const API_URL = "http://127.0.0.1:5000"; // Flask URL
+
+function sendOTP() {
+  const mobile = document.getElementById("mobile").value;
+  localStorage.setItem("mobile", mobile);
+
+  fetch(`${API_URL}/send-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mobile: mobile })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert("OTP sent");
+    window.location.href = "otp.html";
+  });
+}
+
+function verifyOTP() {
+  const otp = document.getElementById("otp").value;
+  const mobile = localStorage.getItem("mobile");
+
+  fetch(`${API_URL}/verify-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mobile: mobile, otp: otp })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert("Login successful");
+    window.location.href = "dashboard.html";
+  });
+}
